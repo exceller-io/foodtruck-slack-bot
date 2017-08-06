@@ -168,7 +168,8 @@ func showTrucks(rtm *slack.RTM, text string, channel string) {
 	message = fmt.Sprintf("%v %v %v - %v \n", m, d, st.Hour(), et.Hour())
 
 	for _, b := range event.Bookings {
-		message += fmt.Sprintf("*%v* (%s)", b.Truck.Name, strings.Join(b.Truck.FoodCategories, ","))
+		message += fmt.Sprintf("*%v* (%s) %v \n", b.Truck.Name,
+			strings.Join(b.Truck.FoodCategories, ","), s3Bucket+b.Truck.FeaturedPhoto)
 	}
 	//send message to channel
 	rtm.SendMessage(rtm.NewOutgoingMessage(message, channel))
