@@ -23,16 +23,16 @@ Loop:
 	for {
 		select {
 		case msg := <-rtm.IncomingEvents:
-			fmt.Print("Event Received: ")
 			switch ev := msg.Data.(type) {
 			case *slack.ConnectedEvent:
-				fmt.Println("Connection counter:", ev.ConnectionCount)
+				fmt.Println("Connection Count: ", ev.ConnectionCount)
 
 			case *slack.MessageEvent:
-				fmt.Printf("Message: %v\n", ev)
+				fmt.Printf("Incoming message: %v\n", ev)
 				info := rtm.GetInfo()
 				prefix := fmt.Sprintf("<@%s> ", info.User.ID)
 
+				//only respond if @mention user is same as bot user id, we don't want to respond to other messages on channel
 				if ev.User != info.User.ID && strings.HasPrefix(ev.Text, prefix) {
 					respond(rtm, ev, prefix)
 				}
@@ -161,7 +161,6 @@ func showTrucks(rtm *slack.RTM, text string, channel string) {
 		return
 	}
 	event := resp.Events[0]
-	fmt.Printf("Found Event : %v", event)
 	st, _ := time.Parse(time.RFC3339, event.StartTime)
 	et, _ := time.Parse(time.RFC3339, event.EndTime)
 	_, m, d := st.Date()
