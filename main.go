@@ -160,7 +160,7 @@ func showTrucks(rtm *slack.RTM, text string, channel string) {
 		rtm.SendMessage(rtm.NewOutgoingMessage(message, channel))
 		return
 	}
-	event := resp.Events[0]
+	event := resp.Events[index]
 	st, _ := time.Parse(time.RFC3339, event.StartTime)
 	et, _ := time.Parse(time.RFC3339, event.EndTime)
 	_, m, d := st.Date()
