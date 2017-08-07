@@ -1,0 +1,1 @@
+worker: foodtruck-slack-bot
