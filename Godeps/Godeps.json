@@ -1,0 +1,16 @@
+{
+	"ImportPath": "github.com/rprakashg/foodtruck-slack-bot",
+	"GoVersion": "go1.8",
+	"GodepVersion": "v79",
+	"Deps": [
+		{
+			"ImportPath": "github.com/nlopes/slack",
+			"Comment": "v0.1.0-10-g5cde21b",
+			"Rev": "5cde21b8b96a43fc3435a1f514123d14fd7eabdc"
+		},
+		{
+			"ImportPath": "golang.org/x/net/websocket",
+			"Rev": "5602c733f70afc6dcec6766be0d5034d4c4f14de"
+		}
+	]
+}
