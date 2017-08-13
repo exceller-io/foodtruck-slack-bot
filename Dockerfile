@@ -2,7 +2,8 @@ FROM golang as builder
 
 WORKDIR /go/src/github.com/rprakashg/foodtruck-slack-bot/
 
-RUN go get -d -v github.com/nlopes/slack
+RUN go get -d -v github.com/nlopes/slack \
+    && go get -d -v github.com/robfig/cron
 
 COPY . .
 

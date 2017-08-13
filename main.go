@@ -2,21 +2,57 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/nlopes/slack"
+	"github.com/robfig/cron"
 	"github.com/rprakashg/foodtruck-slack-bot/seattlefoodtruck"
 )
 
 const s3Bucket = "https://s3-us-west-2.amazonaws.com/seattlefoodtruck-uploads-prod/"
 
+var (
+	rtm           *slack.RTM
+	api           *slack.Client
+	locations     []string
+	channel       string
+	token         string
+	messageParams = slack.PostMessageParameters{AsUser: true}
+	c             *cron.Cron
+)
+
+func init() {
+	locations = strings.Split(os.Getenv("LOCATION_IDS"), ",")
+	channel = os.Getenv("CHANNEL")
+	token = os.Getenv("SLACK_TOKEN")
+}
+
 func main() {
-	token := os.Getenv("SLACK_TOKEN")
-	api := slack.New(token)
-	rtm := api.NewRTM()
+	api = slack.New(token)
+	rtm = api.NewRTM()
+
+	if len(locations) > 0 && channel != "" {
+		fmt.Println("Creating a new instance of Cron Scheduler")
+		c = cron.New()
+		c.AddFunc("0 0 08 * * mon-fri", func() {
+			fmt.Println("Executing func in Cron")
+			message, err := showTrucksForLocations(locations)
+			if err != nil {
+				fmt.Println("Failed to get trucks for locations")
+			} else {
+				log.Println("Message : ", message)
+				responseHandler(channel, message)
+			}
+		})
+		//Start the Cron
+		fmt.Println("Starting Cron")
+		c.Start()
+	}
+
 	go rtm.ManageConnection()
 
 Loop:
@@ -141,37 +177,40 @@ func showTrucks(rtm *slack.RTM, text string, channel string) {
 		rtm.SendMessage(rtm.NewOutgoingMessage("Missing location", channel))
 		return
 	}
+	message = getTrucksForLocation(locString)
+	//send message to channel
+	rtm.SendMessage(rtm.NewOutgoingMessage(message, channel))
+}
+
+func getTrucksForLocation(locString string) (message string) {
 	location, _ := strconv.Atoi(locString)
 	p, _ := seattlefoodtruck.NewProxy("https://www.seattlefoodtruck.com")
 	req := seattlefoodtruck.NewLocationEventsRequest(location, 1)
 	resp, err := p.GetLocationEvents(&req)
 	if err != nil {
-		rtm.SendMessage(rtm.NewOutgoingMessage(err.Error(), channel))
+		message = err.Error()
 		return
 	}
 	if len(resp.Events) == 0 {
 		message = fmt.Sprintf("No events at %v", locString)
-		rtm.SendMessage(rtm.NewOutgoingMessage(message, channel))
 		return
 	}
 	index := find(resp.Events, filterByStartDate)
 	if index == -1 {
 		message = fmt.Sprintf("No food trucks found at %v", locString)
-		rtm.SendMessage(rtm.NewOutgoingMessage(message, channel))
 		return
 	}
 	event := resp.Events[index]
 	st, _ := time.Parse(time.RFC3339, event.StartTime)
 	et, _ := time.Parse(time.RFC3339, event.EndTime)
 	_, m, d := st.Date()
-	message = fmt.Sprintf("%v %v %v - %v \n", m, d, st.Hour(), et.Hour())
+	message = fmt.Sprintf("%v %v %v - %v \n", m, d, st.Format(time.Kitchen), et.Format(time.Kitchen))
 
 	for _, b := range event.Bookings {
 		message += fmt.Sprintf("*%v* (%s) %v \n", b.Truck.Name,
-			strings.Join(b.Truck.FoodCategories, ","), s3Bucket+b.Truck.FeaturedPhoto)
+			strings.Join(b.Truck.FoodCategories, ", "), s3Bucket+b.Truck.FeaturedPhoto)
 	}
-	//send message to channel
-	rtm.SendMessage(rtm.NewOutgoingMessage(message, channel))
+	return message
 }
 
 //returns the index of found event for today's date, if none returns -1
@@ -186,7 +225,7 @@ func find(events []seattlefoodtruck.Event, f func(seattlefoodtruck.Event) bool) 
 
 // used to filter by event start date
 func filterByStartDate(event seattlefoodtruck.Event) bool {
-	ct := time.Now()
+	ct := time.Now().Local()
 	y1, m1, d1 := ct.Date()
 	//parse start time
 	st, _ := time.Parse(time.RFC3339, event.StartTime)
@@ -195,4 +234,22 @@ func filterByStartDate(event seattlefoodtruck.Event) bool {
 		return true
 	}
 	return false
+}
+
+func showTrucksForLocations(locations []string) (string, error) {
+	var message string
+	if len(locations) == 0 {
+		fmt.Printf("No locations set \n")
+		return "", fmt.Errorf("No locations to show trucks for")
+	}
+	for _, l := range locations {
+		fmt.Printf("Getting trucks for location: %v \n", l)
+		message += fmt.Sprintf("%s \n", getTrucksForLocation(l))
+	}
+	return message, nil
+}
+
+func responseHandler(channel string, message string) {
+	fmt.Printf("Posting message %s to slack %s \n", message, channel)
+	api.PostMessage(channel, message, messageParams)
 }
