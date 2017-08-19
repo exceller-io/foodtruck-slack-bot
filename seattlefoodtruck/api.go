@@ -77,6 +77,15 @@ type LocationResponse struct {
 	} `json:"locations"`
 }
 
+//Location is a location where you can find truck
+type Location struct {
+	Name            string `json:"name"`
+	Address         string `json:"address"`
+	FilteredAddress string `json:"filtered_address"`
+	ID              string `json:"id"`
+	UID             int    `json:"uid"`
+}
+
 //LocationEventsRequest is request for seattle food trucks API at a location
 type LocationEventsRequest struct {
 	Location int
@@ -120,6 +129,7 @@ type Event struct {
 	UpdatedAt   string    `json:"updated_at"`
 	EventID     int       `json:"event_id"`
 	Bookings    []Booking `json:"bookings"`
+	Location    Location  `json:"location"`
 }
 
 //Pagination pagination info
@@ -144,7 +154,7 @@ func (ler LocationEventsRequest) toQueryString() string {
 		ler.Page = 1
 	}
 	qs += "page=" + strconv.Itoa(ler.Page) + "&for_locations=" + strconv.Itoa(ler.Location) + "&with_active_trucks=true" +
-		"&include_bookings=true" + "&with_booking_status=approved"
+		"&include_bookings=true" + "&include_locations=true" + "&with_booking_status=approved"
 
 	return qs
 }

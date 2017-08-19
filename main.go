@@ -204,7 +204,7 @@ func getTrucksForLocation(locString string) (message string) {
 	st, _ := time.Parse(time.RFC3339, event.StartTime)
 	et, _ := time.Parse(time.RFC3339, event.EndTime)
 	_, m, d := st.Date()
-	message = fmt.Sprintf("%v %v %v - %v \n", m, d, st.Format(time.Kitchen), et.Format(time.Kitchen))
+	message = fmt.Sprintf("*%s* \t %v %v %v - %v \n", event.Location.Name, m, d, st.Format(time.Kitchen), et.Format(time.Kitchen))
 
 	for _, b := range event.Bookings {
 		message += fmt.Sprintf("*%v* (%s) %v \n", b.Truck.Name,
