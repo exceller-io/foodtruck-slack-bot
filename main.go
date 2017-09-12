@@ -195,32 +195,38 @@ func getTrucksForLocation(locString string) (message string) {
 		message = fmt.Sprintf("No events at %v", locString)
 		return
 	}
-	index := find(resp.Events, filterByStartDate)
-	if index == -1 {
+	events := find(resp.Events, filterByStartDate)
+	if events == nil {
 		message = fmt.Sprintf("No food trucks found at %v", locString)
 		return
 	}
-	event := resp.Events[index]
-	st, _ := time.Parse(time.RFC3339, event.StartTime)
-	et, _ := time.Parse(time.RFC3339, event.EndTime)
-	_, m, d := st.Date()
-	message = fmt.Sprintf("*%s* \t %v %v %v - %v \n", event.Location.Name, m, d, st.Format(time.Kitchen), et.Format(time.Kitchen))
+	message = ""
+	for index, eventIndex := range events {
+		event := resp.Events[eventIndex]
+		if len(event.Bookings) != 0 {
+			st, _ := time.Parse(time.RFC3339, event.StartTime)
+			et, _ := time.Parse(time.RFC3339, event.EndTime)
+			_, m, d := st.Date()
+			message += fmt.Sprintf("*%s* \t %v %v %v - %v \n", event.Location.Name, m, d, st.Format(time.Kitchen), et.Format(time.Kitchen))
 
-	for _, b := range event.Bookings {
-		message += fmt.Sprintf("*%v* (%s) %v \n", b.Truck.Name,
-			strings.Join(b.Truck.FoodCategories, ", "), s3Bucket+b.Truck.FeaturedPhoto)
+			for _, b := range event.Bookings {
+				message += fmt.Sprintf("*%v* (%s) %v \n", b.Truck.Name,
+					strings.Join(b.Truck.FoodCategories, ", "), s3Bucket+b.Truck.FeaturedPhoto)
+			}
+		}
 	}
 	return message
 }
 
-//returns the index of found event for today's date, if none returns -1
-func find(events []seattlefoodtruck.Event, f func(seattlefoodtruck.Event) bool) int {
+//returns a slice of indeces of found events matching the passed function, if none returns nil
+func find(events []seattlefoodtruck.Event, f func(seattlefoodtruck.Event) bool) []int {
+	var foundEvents []int
 	for i, e := range events {
 		if f(e) {
-			return i
+			foundEvents = append(i, 0)
 		}
 	}
-	return -1
+	return foundEvents
 }
 
 // used to filter by event start date
