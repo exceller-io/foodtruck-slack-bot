@@ -201,7 +201,7 @@ func getTrucksForLocation(locString string) (message string) {
 		return
 	}
 	message = ""
-	for index, eventIndex := range events {
+	for eventIndex := range events {
 		event := resp.Events[eventIndex]
 		if len(event.Bookings) != 0 {
 			st, _ := time.Parse(time.RFC3339, event.StartTime)
@@ -223,7 +223,7 @@ func find(events []seattlefoodtruck.Event, f func(seattlefoodtruck.Event) bool) 
 	var foundEvents []int
 	for i, e := range events {
 		if f(e) {
-			foundEvents = append(i, 0)
+			foundEvents = append(foundEvents, i)
 		}
 	}
 	return foundEvents
