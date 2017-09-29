@@ -1,0 +1,1 @@
+Search.setIndex({docnames:["index"],envversion:50,filenames:["index.rst"],objects:{},objnames:{},objtypes:{},terms:{about:0,add:0,docker:0,here:0,index:0,inform:0,modul:0,page:0,project:0,search:0,step:0},titles:["Welcome to Seattle food truck bot!"],titleterms:{bot:0,document:[],food:0,indic:0,overview:0,run:0,seattl:0,tabl:0,truck:0,welcom:0}})
